@@ -36,7 +36,7 @@ export class Packet {
    * @param encoder The encoder to use to encode the string.
    */
   public static fromPacket(packet: Packet): Packet {
-    return new Packet(packet.data)
+    return new Packet(packet.data);
   }
 
   /**
@@ -53,6 +53,6 @@ export class Packet {
    * @param encoder The `TextEncoder` implementation to use to encode the string.
    */
   public static fromString(encoder: TextEncoder, data?: string): Packet {
-    return new Packet(encoder.encode(data))
+    return new Packet(encoder.encode(data));
   }
 }

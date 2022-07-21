@@ -11,5 +11,5 @@ An easy-to-use, relatively simple socket library for Deno.
 
 ## Current features
 
-* Listening for TCP connections on a specified port.
-* Adding listeners to events (connect, close, etc).
+- Listening for TCP connections on a specified port.
+- Adding listeners to events (connect, close, etc).

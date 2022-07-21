@@ -1,5 +1,36 @@
 import { ConnectOptions } from "./dialer.ts";
 
+export class ProxyListener implements Deno.Listener {
+  constructor(private inner: Deno.Listener) {
+  }
+  close() {
+    this.inner.close();
+  }
+  get addr() {
+    return this.inner.addr;
+  }
+  get rid() {
+    return this.inner.rid;
+  }
+  async accept() {
+    const conn: Deno.Conn = await this.inner.accept();
+    console.log(conn.localAddr, conn.remoteAddr);
+    return conn;
+  }
+  [Symbol.asyncIterator](): AsyncIterableIterator<Deno.Conn> {
+    return this;
+  }
+  async next(): Promise<IteratorResult<Deno.Conn>> {
+    console.log("this.next");
+    const conn: Deno.Conn = await this.accept();
+    const result: IteratorResult<Deno.Conn> = {
+      done: false,
+      value: conn,
+    };
+    return result;
+  }
+}
+
 // Modelled after Deno.Listener
 // * https://doc.deno.land/deno/stable/~/Deno.Listener
 export class Listener implements Deno.Listener {
@@ -12,20 +43,33 @@ export class Listener implements Deno.Listener {
     };
   }
   async init(): Promise<void> {
-    this.conn0 = await Deno.connect({ hostname: this.options.addr, port: 80 });
+    this.conn0 = await Deno.connect({
+      hostname: this.options.addr,
+      port: 80,
+    });
   }
   close(): void {}
   async accept(): Promise<Deno.Conn> {
-    return await Deno.connect({ hostname: this.options.addr, port: 80 });
+    return await Deno.connect({
+      hostname: this.options.addr,
+      port: 80,
+    });
   }
   [Symbol.asyncIterator](): AsyncIterableIterator<Deno.Conn> {
     return this;
   }
   // required method of [Symbol.asyncIterator]()
   async next(): Promise<IteratorResult<Deno.Conn>> {
-    const opts = { hostname: this.options.addr, port: 80 };
+    const opts = {
+      hostname: this.options.addr,
+      port: 80,
+    };
     const conn: Deno.Conn = await Deno.connect(opts);
-    const result: IteratorResult<Deno.Conn> = { done: true, value: conn };
+    console.log(conn.localAddr, conn.remoteAddr);
+    const result: IteratorResult<Deno.Conn> = {
+      done: false,
+      value: conn,
+    };
     return result;
   }
   get addr(): Deno.Addr {

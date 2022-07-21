@@ -1,6 +1,7 @@
 # teleport
 
 [![teleport](https://shield.deno.dev/x/teleport)](https://deno.land/x/teleport)
+[![documentation](https://img.shields.io/badge/documentation-teleport-black)](https://doc.deno.land/https://deno.land/x/teleport)
 
 [Deno.Listener](https://doc.deno.land/deno/stable/~/Deno.Listener) as a service
 

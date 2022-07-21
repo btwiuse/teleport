@@ -2,7 +2,7 @@ import { ConnectOptions } from "./dialer.ts";
 
 // Modelled after Deno.Listener
 // * https://doc.deno.land/deno/stable/~/Deno.Listener
-class Listener implements Deno.Listener {
+export class Listener implements Deno.Listener {
   public options: ConnectOptions;
   private conn0?: Deno.Conn;
   constructor({ addr, from = "/" }: ConnectOptions) {

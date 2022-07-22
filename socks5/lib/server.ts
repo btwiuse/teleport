@@ -2,6 +2,9 @@ import { Client } from "./client.ts";
 import { ClientEvents } from "./events/client-events.ts";
 import { EventEmitter } from "./events/event-emitter.ts";
 import { ServerEvent, ServerEvents } from "./events/server-events.ts";
+import { readExact } from "https://deno.land/std/encoding/binary.ts";
+import { u8aToString } from "https://deno.land/x/polkadot/util/mod.ts";
+import { copy } from "https://deno.land/std/streams/conversion.ts";
 
 export class Server extends EventEmitter<ServerEvent> {
   /**
@@ -32,6 +35,103 @@ export class Server extends EventEmitter<ServerEvent> {
     );
   }
 
+  public async handleCommandRequest(conn: Deno.Conn) {
+    // get version and number of client supported auth methods
+    let bufSize = 2;
+    let buf: Uint8Array = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    console.log(bufSize, buf); // VERSION, COMMAND
+
+    // assume CONNECT
+
+    // skip rsv
+    bufSize = 1;
+    buf = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    console.log(bufSize, buf); // RSV
+
+    // get ATYP
+    bufSize = 1;
+    buf = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    console.log(bufSize, buf); // ATYP
+
+    let hostname = "unknown";
+    switch (buf[0]) {
+      case 0x01:
+        bufSize = 4;
+        buf = new Uint8Array(Array(bufSize).fill(0));
+        await readExact(conn, buf);
+        hostname = buf.map((x) => `${x}`).join(".");
+        console.log(bufSize, buf, "IPV4", hostname); // IPV4
+        break;
+      case 0x03:
+        bufSize = 1;
+        buf = new Uint8Array(Array(bufSize).fill(0));
+        await readExact(conn, buf);
+        console.log(bufSize, buf); // domain length
+        bufSize = buf[0];
+        buf = new Uint8Array(Array(bufSize).fill(0));
+        await readExact(conn, buf);
+        hostname = u8aToString(buf);
+        console.log(bufSize, buf, "DOMAIN", hostname); // domain
+        break;
+      case 0x04:
+        bufSize = 16;
+        buf = new Uint8Array(Array(bufSize).fill(0));
+        await readExact(conn, buf);
+        console.log(bufSize, buf, "IPV6"); // IPV6
+        break;
+    }
+    bufSize = 2;
+    buf = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    const port = (buf[0] << 8) + buf[1];
+    console.log(bufSize, buf, "PORT", port); // PORT
+
+    try {
+      const remote = await Deno.connect({ hostname, port });
+
+      buf = new Uint8Array([5, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
+      await conn.write(buf);
+
+      copy(remote, conn);
+      copy(conn, remote);
+    } catch (e) {
+    }
+  }
+
+  public async handleConn(conn: Deno.Conn) {
+    // get version and number of client supported auth methods
+    let bufSize = 2;
+    let buf: Uint8Array = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    console.log(bufSize, buf);
+
+    // number of client supported methods
+    bufSize = buf[1];
+    buf = new Uint8Array(Array(bufSize).fill(0));
+    await readExact(conn, buf);
+    console.log(bufSize, buf);
+
+    if (buf.includes(0)) {
+      await conn.write(new Uint8Array([0x05, 0x00])); // VERSION, NOAUTH
+      console.log("noauth");
+      while (true) {
+        try {
+          await this.handleCommandRequest(conn);
+        } catch (e) {
+          console.log("bye");
+          break;
+        }
+      }
+    } else {
+      console.log("not supported");
+      await conn.write(new Uint8Array([0x05, 0xff])); // VERSION, NOT_ACCEPTABLE
+      // conn.close();
+    }
+  }
+
   /**
    * Start listening to the provided port for client connections.
    */
@@ -42,6 +142,8 @@ export class Server extends EventEmitter<ServerEvent> {
     this.emit(ServerEvents.listen);
 
     for await (const conn of server) {
+      this.handleConn(conn);
+      continue;
       const client = new Client(conn);
       clients.push(client);
 

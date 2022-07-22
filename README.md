@@ -19,3 +19,10 @@
 - [Deno.Addr](https://doc.deno.land/deno/stable/~/Deno.Addr)
 - [Deno.Conn](https://doc.deno.land/deno/stable/~/Deno.Conn)
 - [Deno.Listener](https://doc.deno.land/deno/stable/~/Deno.Listener)
+
+### Streams
+
+- [WritableStream](https://doc.deno.land/deno/stable/~/WritableStream)
+- [WritableStreamDefaultWriter](https://doc.deno.land/deno/stable/~/WritableStreamDefaultWriter)
+- [ReadableStream](https://doc.deno.land/deno/stable/~/ReadableStream)
+- [ReadableStreamDefaultReader](https://doc.deno.land/deno/stable/~/ReadableStreamDefaultReader)

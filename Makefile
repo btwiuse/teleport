@@ -1,2 +1,2 @@
 check:
-	deno check mod.ts
+	deno check --unstable mod.ts

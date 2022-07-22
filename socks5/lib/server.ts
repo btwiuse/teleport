@@ -106,13 +106,13 @@ export class Server extends EventEmitter<ServerEvent> {
     let bufSize = 2;
     let buf: Uint8Array = new Uint8Array(Array(bufSize).fill(0));
     await readExact(conn, buf);
-    console.log(bufSize, buf);
+    console.log(bufSize, buf, 'auth');
 
     // number of client supported methods
     bufSize = buf[1];
     buf = new Uint8Array(Array(bufSize).fill(0));
     await readExact(conn, buf);
-    console.log(bufSize, buf);
+    console.log(bufSize, buf, 'abc', (new TextDecoder()).decode(buf));
 
     if (buf.includes(0)) {
       await conn.write(new Uint8Array([0x05, 0x00])); // VERSION, NOAUTH
@@ -142,7 +142,14 @@ export class Server extends EventEmitter<ServerEvent> {
     this.emit(ServerEvents.listen);
 
     for await (const conn of server) {
+      // let enc = new TextEncoder();
+      // conn.write(enc.encode("HTTP/1.1 200 OK\r\nContent-Length: 15\r\n\r\n111.199.80.154\n"));
+      // conn.close()
+      // await copy(conn, Deno.stdout);
       this.handleConn(conn);
+      // copy(conn, conn);
+      continue;
+      console.log('done');
       continue;
       const client = new Client(conn);
       clients.push(client);

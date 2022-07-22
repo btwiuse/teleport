@@ -1,3 +1,5 @@
+import { WebSocketConn } from "./wsconn.ts";
+
 // Modelled after Deno.ConnectOptions
 // * https://doc.deno.land/deno/stable/~/Deno.ConnectOptions
 export type ConnectOptions = {
@@ -10,9 +12,6 @@ export type ConnectOptions = {
 export async function connect(
   { addr, from = "/" }: ConnectOptions,
 ): Promise<Deno.Conn> {
-  console.log({ addr, from });
-  return Deno.connect({
-    hostname: "deno.land",
-    port: 80,
-  });
+  console.log("conNect", { addr, from });
+  return await WebSocketConn(addr);
 }

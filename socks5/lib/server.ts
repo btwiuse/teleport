@@ -62,7 +62,7 @@ export class Server extends EventEmitter<ServerEvent> {
         bufSize = 4;
         buf = new Uint8Array(Array(bufSize).fill(0));
         await readExact(conn, buf);
-        hostname = buf.map((x) => `${x}`).join(".");
+        hostname = buf.join(".");
         console.log(bufSize, buf, "IPV4", hostname); // IPV4
         break;
       case 0x03:

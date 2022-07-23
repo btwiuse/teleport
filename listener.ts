@@ -112,7 +112,7 @@ export class Listener implements Deno.Listener {
         console.log("wait");
         await sleep(300);
       }
-      resolve(this.connq.shift());
+      resolve(this.connq.shift()!);
     });
     // const conn = await this.connect();
     // return conn;

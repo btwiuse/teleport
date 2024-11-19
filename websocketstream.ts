@@ -40,7 +40,7 @@ for (;;) {
 
 // const denoConn: Deno.Conn = new Conn(readable, writable);
 
-/* https://doc.deno.land/deno/stable/~/Deno.Conn
+/* https://docs.deno.com/api/deno/~/Deno.Conn
  *
  * interface Conn extends Reader, Writer, Closer {
  * readonly localAddr: Addr;

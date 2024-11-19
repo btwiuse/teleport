@@ -51,7 +51,7 @@ async function sleep(n: number) {
 }
 
 // Modelled after Deno.Listener
-// * https://doc.deno.land/deno/stable/~/Deno.Listener
+// * https://docs.deno.com/api/deno/~/Deno.Listener
 export class Listener implements Deno.Listener {
   public options: ConnectOptions;
   private conn0?: Deno.Conn;

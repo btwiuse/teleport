@@ -4,6 +4,7 @@ import { EventEmitter } from "./events/event-emitter.ts";
 import { ServerEvent, ServerEvents } from "./events/server-events.ts";
 import { readExact } from "https://deno.land/std@0.123.0/encoding/binary.ts";
 import { u8aToString } from "https://deno.land/x/polkadot/util/mod.ts";
+import { copy } from "jsr:@std/io/copy";
 
 export class Server extends EventEmitter<ServerEvent> {
   /**
@@ -94,11 +95,11 @@ export class Server extends EventEmitter<ServerEvent> {
       buf = new Uint8Array([5, 0, 0, 1, 0, 0, 0, 0, 0, 0]);
       await conn.write(buf);
 
-      remote.readable.pipeTo(conn.writable)
+      copy(remote, conn)
         .catch((e) => {
           console.log(e);
         });
-      conn.readable.pipeTo(remote.writable)
+      copy(conn, remote)
         .catch((e) => {
           console.log(e);
         });

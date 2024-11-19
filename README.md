@@ -22,7 +22,7 @@
 
 ### Streams
 
-- [WritableStream](https://docs.deno.com/api/deno/~/WritableStream)
-- [WritableStreamDefaultWriter](https://docs.deno.com/api/deno/~/WritableStreamDefaultWriter)
-- [ReadableStream](https://docs.deno.com/api/deno/~/ReadableStream)
-- [ReadableStreamDefaultReader](https://docs.deno.com/api/deno/~/ReadableStreamDefaultReader)
+- [WritableStream](https://docs.deno.com/api/web/~/WritableStream)
+- [WritableStreamDefaultWriter](https://docs.deno.com/api/web/~/WritableStreamDefaultWriter)
+- [ReadableStream](https://docs.deno.com/api/web/~/ReadableStream)
+- [ReadableStreamDefaultReader](https://docs.deno.com/api/web/~/ReadableStreamDefaultReader)

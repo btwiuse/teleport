@@ -1,6 +1,5 @@
 import { connect, ConnectOptions } from "./dialer.ts";
-import { BufReader } from "https://deno.land/std/io/buffer.ts";
-import { copy } from "https://deno.land/std/streams/conversion.ts";
+import { BufReader } from "https://deno.land/std/io/mod.ts";
 import { EventEmitter } from "https://deno.land/x/event/mod.ts";
 
 export class ProxyListener implements Deno.Listener {
@@ -18,9 +17,6 @@ export class ProxyListener implements Deno.Listener {
   get addr() {
     return this.inner.addr;
   }
-  get rid() {
-    return this.inner.rid;
-  }
   async accept() {
     const conn: Deno.Conn = await this.inner.accept();
     console.log(conn.localAddr, conn.remoteAddr);
@@ -28,6 +24,13 @@ export class ProxyListener implements Deno.Listener {
   }
   [Symbol.asyncIterator](): AsyncIterableIterator<Deno.Conn> {
     return this;
+  }
+  [Symbol.dispose](): void {
+    try {
+      this.close();
+    } catch (error) {
+      console.error("Error disposing listener:", error);
+    }
   }
   async next(): Promise<IteratorResult<Deno.Conn>> {
     console.log("this.next");
@@ -120,6 +123,13 @@ export class Listener implements Deno.Listener {
   [Symbol.asyncIterator](): AsyncIterableIterator<Deno.Conn> {
     return this;
   }
+  [Symbol.dispose](): void {
+    try {
+      this.close();
+    } catch (error) {
+      console.error("Error disposing listener:", error);
+    }
+  }
   // required method of [Symbol.asyncIterator]()
   async next(): Promise<IteratorResult<Deno.Conn>> {
     console.log("async next");
@@ -137,8 +147,5 @@ export class Listener implements Deno.Listener {
       port: 80,
       transport: "tcp",
     };
-  }
-  get rid(): number {
-    return 0;
   }
 }

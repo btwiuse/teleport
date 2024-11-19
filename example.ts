@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --unstable -A
+#!/usr/bin/env -S deno run --unstable-net -A
 
 import { connect, ConnectOptions } from "./mod.ts";
 import { Listener, ProxyListener } from "./mod.ts";

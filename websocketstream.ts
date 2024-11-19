@@ -1,7 +1,7 @@
-#!/usr/bin/env -S deno run -A --unstable
+#!/usr/bin/env -S deno run -A --unstable-net
 
-import { BufReader } from "https://deno.land/std/io/buffer.ts";
-import { copy } from "https://deno.land/std/streams/conversion.ts";
+import { BufReader } from "https://deno.land/std/io/mod.ts";
+import { copy } from "https://deno.land/std@0.173.0/streams/copy.ts";
 import { WebSocketConn } from "./wsconn.ts";
 
 // create wsConn from WebSocketStream
@@ -9,6 +9,7 @@ const wsConn = await WebSocketConn("ws://127.0.0.1:8080");
 
 // write to wsConn
 copy(Deno.stdin, wsConn);
+// Deno.stdin.readable.pipeTo(wsConn.writable);
 
 // buf read from wsConn
 const scanner = new BufReader(wsConn);

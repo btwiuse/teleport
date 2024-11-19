@@ -1,7 +1,8 @@
 import {
   readerFromStreamReader,
   writerFromStreamWriter,
-} from "https://deno.land/std/streams/conversion.ts";
+} from "https://deno.land/std/streams/mod.ts";
+import type { Reader, Writer } from "jsr:@std/io/types";
 
 // https://web.dev/i18n/zh/websocketstream/
 // https://github.com/DefinitelyTyped/DefinitelyTyped/blob/3cc32b8e73320a5e9e4a17744236180f52c753d9/types/whatwg-streams/whatwg-streams-tests.ts
@@ -50,9 +51,8 @@ function makeWritableWebSocketStream(ws: WebSocket) {
 export class Conn implements Deno.Conn {
   public localAddr: Deno.Addr;
   public remoteAddr: Deno.Addr;
-  public rid: number;
-  public reader: Deno.Reader;
-  public writer: Deno.Writer;
+  public reader: Reader;
+  public writer: Writer;
   constructor(
     public readable: ReadableStream,
     public writable: WritableStream,
@@ -69,15 +69,24 @@ export class Conn implements Deno.Conn {
       transport: "tcp",
     };
 
-    this.rid = 10;
-
     this.reader = readerFromStreamReader(this.readable.getReader());
 
     this.writer = writerFromStreamWriter(this.writable.getWriter());
   }
+  unref() {
+  }
+  ref() {
+  }
   static async fromWebSocketStream(wst: WebSocketStream): Promise<Conn> {
-    const { readable, writable } = await wst.connection;
+    const { readable, writable } = await wst.opened;
     return new Conn(readable, writable);
+  }
+  [Symbol.dispose](): void {
+    try {
+      this.close();
+    } catch (error) {
+      console.error("Error disposing listener:", error);
+    }
   }
   async read(p: Uint8Array): Promise<number | null> {
     // return await this.reader.read(p);

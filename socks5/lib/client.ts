@@ -1,6 +1,6 @@
 import { ClientEvent, ClientEvents } from "./events/client-events.ts";
 import { EventEmitter } from "./events/event-emitter.ts";
-import { iterateReader } from "https://deno.land/std@0.113.0/streams/conversion.ts";
+import { iterateReader } from "https://deno.land/std/streams/mod.ts";
 import { Packet } from "./packet.ts";
 
 /**

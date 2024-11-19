@@ -1,2 +1,2 @@
 check:
-	deno check --unstable mod.ts
+	deno check --unstable-net mod.ts

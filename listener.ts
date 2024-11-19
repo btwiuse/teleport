@@ -1,6 +1,6 @@
 import { connect, ConnectOptions } from "./dialer.ts";
-import { BufReader } from "https://deno.land/std/io/mod.ts";
 import { EventEmitter } from "https://deno.land/x/event/mod.ts";
+import { TextLineStream } from "jsr:@std/streams";
 
 export class ProxyListener implements Deno.Listener {
   constructor(private inner: Deno.Listener) {
@@ -83,24 +83,31 @@ export class Listener implements Deno.Listener {
   }
   async serve(): Promise<void> {
     if (!this.conn0) throw new Error("conn0 uninitialized");
-    const scanner = new BufReader(this.conn0);
+    const reader = this.conn0.readable
+      .pipeThrough(new TextDecoderStream())
+      .pipeThrough(new TextLineStream())
+      .getReader();
     const listener = (conn: Deno.Conn) => {
       // this.connq.push(conn);
     };
     this.eventEmitter.on("accept", listener);
-    for (;;) {
-      let line = await scanner.readString("\n");
-      if (line == null) {
-        console.log("disconnected: read: EOF");
-        break;
+    try {
+      for (;;) {
+        const { done, value: line } = await reader.read();
+        if (done) {
+          console.log("disconnected: read: EOF");
+          break;
+        }
+        console.log(line);
+        if (line === "ACCEPT") {
+          const conn = await this.connect();
+          console.log("connq.push(conn)");
+          this.connq.push(conn);
+          // this.eventEmitter.emit("accept", conn);
+        }
       }
-      console.log(line);
-      if (line == "ACCEPT\n") {
-        const conn = await this.connect();
-        console.log("connq.push(conn)");
-        this.connq.push(conn);
-        // this.eventEmitter.emit("accept", conn);
-      }
+    } finally {
+      reader.releaseLock();
     }
   }
   unref(): void {}

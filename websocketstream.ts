@@ -1,6 +1,9 @@
 #!/usr/bin/env -S deno run -A --unstable-net
 
-import { BufReader } from "https://deno.land/std/io/mod.ts";
+// start the server with
+// - websocat -s 8080
+// - websocat -s 8080 -b
+
 import { WebSocketConn } from "./wsconn.ts";
 import { copy } from "jsr:@std/io/copy";
 
@@ -10,21 +13,8 @@ const wsConn = await WebSocketConn("ws://127.0.0.1:8080");
 // write to wsConn
 copy(Deno.stdin, wsConn);
 
-// buf read from wsConn
-const scanner = new BufReader(wsConn);
-for (;;) {
-  try {
-    let line = await scanner.readString("\n");
-    if (line == null) {
-      console.log("disconnected: read: EOF");
-      break;
-    }
-    console.log(line);
-  } catch (e) {
-    console.log(e);
-    break;
-  }
-}
+// read from wsConn
+copy(wsConn, Deno.stdout);
 
 //#!/usr/bin/env -S deno run -A
 

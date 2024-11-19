@@ -1,9 +1,3 @@
-import {
-  readerFromStreamReader,
-  writerFromStreamWriter,
-} from "https://deno.land/std/streams/mod.ts";
-import type { Reader, Writer } from "jsr:@std/io/types";
-
 // https://web.dev/i18n/zh/websocketstream/
 // https://github.com/DefinitelyTyped/DefinitelyTyped/blob/3cc32b8e73320a5e9e4a17744236180f52c753d9/types/whatwg-streams/whatwg-streams-tests.ts
 
@@ -51,8 +45,6 @@ function makeWritableWebSocketStream(ws: WebSocket) {
 export class Conn implements Deno.Conn {
   public localAddr: Deno.Addr;
   public remoteAddr: Deno.Addr;
-  public reader: Reader;
-  public writer: Writer;
   constructor(
     public readable: ReadableStream,
     public writable: WritableStream,
@@ -68,10 +60,6 @@ export class Conn implements Deno.Conn {
       port: 47000,
       transport: "tcp",
     };
-
-    this.reader = readerFromStreamReader(this.readable.getReader());
-
-    this.writer = writerFromStreamWriter(this.writable.getWriter());
   }
   unref() {
   }
@@ -79,7 +67,10 @@ export class Conn implements Deno.Conn {
   }
   static async fromWebSocketStream(wst: WebSocketStream): Promise<Conn> {
     const { readable, writable } = await wst.opened;
-    return new Conn(readable, writable);
+    return new Conn(
+      readable,
+      writable,
+    );
   }
   [Symbol.dispose](): void {
     try {
@@ -89,13 +80,47 @@ export class Conn implements Deno.Conn {
     }
   }
   async read(p: Uint8Array): Promise<number | null> {
-    // return await this.reader.read(p);
-    const n = await this.reader.read(p);
-    console.log(n);
-    return n;
+    // console.log("read");
+    let reader = this.readable.getReader();
+
+    try {
+      const { done, value } = await reader.read();
+      if (done) {
+        return null; // Signal end of stream
+      }
+
+      if (value) {
+        // console.log(value, typeof value, value.length);
+        if (typeof value === "string") {
+          let v = new TextEncoder().encode(value);
+          p.set(v);
+          return v.length;
+        }
+        p.set(value); // Copy the read bytes into the provided buffer
+        return value.length;
+      } else {
+        return 0; // No data read in this chunk
+      }
+    } catch (error) {
+      console.error("Error reading from stream:", error);
+      return null; // Or throw the error, depending on your error handling strategy
+    } finally {
+      reader.releaseLock();
+    }
   }
   async write(p: Uint8Array): Promise<number> {
-    return await this.writer.write(p);
+    let writer = this.writable.getWriter();
+
+    try {
+      await writer.write(p);
+      return p.length; // Number of bytes written
+    } catch (error) {
+      console.error("Error writing to stream:", error);
+      // Handle the error appropriately (e.g., re-throw, return 0, etc.)
+      throw error; // Or choose another error handling strategy
+    } finally {
+      writer.releaseLock();
+    }
   }
   close(): void {
     this.readable.cancel();

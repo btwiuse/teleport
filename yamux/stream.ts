@@ -66,7 +66,7 @@ export class YamuxStream implements Reader, Writer, Closer {
       throw Errors.StreamClosed;
     }
 
-    const flags = this.state === StreamState.Init ? Flag.SYN : 0; // Don't send ACK unless necessary
+    const flags = this.state === StreamState.Init ? Flag.SYN : Flag.NUL; // Don't send ACK unless necessary
     const header = new Header(VERSION, Type.Data, flags, this.id, p.length);
     await this.session.sendFrame(header, p);
 

@@ -10,6 +10,7 @@ export enum Type {
 }
 
 export enum Flag {
+  NUL = 0,
   SYN = 1,
   ACK = 2,
   FIN = 4,

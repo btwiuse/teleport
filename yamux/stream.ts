@@ -9,7 +9,7 @@ import {
 } from "./types.ts";
 import { Header } from "./header.ts";
 
-export class YamuxStream implements Reader, Writer, Closer {
+export class YamuxStream implements Deno.Conn {
   public state: StreamState;
   private readQueue: Uint8Array[] = [];
   private readBuffer = new Uint8Array(0);
@@ -38,6 +38,61 @@ export class YamuxStream implements Reader, Writer, Closer {
     this.recvWindow = initialWindow;
     this.sendWindow = initialWindow;
   }
+  unref() {
+  }
+
+  ref() {
+  }
+
+  readonly localAddr: Deno.Addr = {
+    transport: "tcp",
+    hostname: "127.0.0.1",
+    port: 0,
+  };
+
+  readonly remoteAddr: Deno.Addr = {
+    transport: "tcp",
+    hostname: "127.0.0.1",
+    port: 0,
+  };
+
+  // Add closeWrite method
+  async closeWrite(): Promise<void> {
+    const header = new Header(VERSION, Type.WindowUpdate, Flag.FIN, this.id, 0);
+    await this.session.sendFrame(header);
+  }
+
+  get readable(): ReadableStream<Uint8Array> {
+    return new ReadableStream({
+      pull: async (controller) => {
+        const chunk = new Uint8Array(8192);
+        const n = await this.read(chunk);
+        if (n === null) {
+          controller.close();
+        } else {
+          controller.enqueue(chunk.subarray(0, n));
+        }
+      },
+      cancel: () => {
+        this.close();
+      },
+    });
+  }
+
+  get writable(): WritableStream<Uint8Array> {
+    return new WritableStream({
+      write: async (chunk) => {
+        await this.write(chunk);
+      },
+      close: () => {
+        this.close();
+      },
+    });
+  }
+
+  [Symbol.dispose](): void {
+    this.close();
+  }
 
   async read(p: Uint8Array): Promise<number | null> {
     while (this.readQueue.length === 0) {
@@ -49,15 +104,15 @@ export class YamuxStream implements Reader, Writer, Closer {
     }
 
     if (this.state === StreamState.Closed) return null;
-  
+
     const chunk = this.readQueue.shift()!;
     const n = Math.min(p.length, chunk.length);
     p.set(chunk.subarray(0, n));
-    
+
     if (n < chunk.length) {
       this.readQueue.unshift(chunk.subarray(n));
     }
-    
+
     return n;
   }
 
@@ -104,7 +159,7 @@ export class YamuxStream implements Reader, Writer, Closer {
 
   pushData(data: Uint8Array): void {
     this.readQueue.push(data);
-    this.readResolver?.();  // Signal new data available
+    this.readResolver?.(); // Signal new data available
   }
 
   updateSendWindow(delta: number): void {
@@ -113,7 +168,7 @@ export class YamuxStream implements Reader, Writer, Closer {
 
   async sendWindowUpdate(): Promise<void> {
     if (this.state === StreamState.Closed) return;
-    
+
     // Only send if window is significantly reduced
     const windowUsed = INITIAL_WINDOW - this.recvWindow;
     if (windowUsed < INITIAL_WINDOW / 2) return;
@@ -123,7 +178,7 @@ export class YamuxStream implements Reader, Writer, Closer {
       Type.WindowUpdate,
       this.state === StreamState.Init ? Flag.SYN : Flag.ACK,
       this.id,
-      this.recvWindow
+      this.recvWindow,
     );
     await this.session.sendFrame(header);
   }

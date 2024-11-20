@@ -26,7 +26,7 @@ export class YamuxSession {
   private readyRejecter!: (err: Error) => void;
   readonly ready: Promise<void>;
   // Add ping tracking
-  private pings = new Map<number, number>();  // Map of pingID to timestamp
+  private pings = new Map<number, number>(); // Map of pingID to timestamp
   private pingID = 0;
   private pingTimeout = 30000; // 30 seconds timeout for pings
 
@@ -171,16 +171,18 @@ export class YamuxSession {
   protected async handleWindowUpdate(header: Header) {
     const stream = this.streams.get(header.streamID);
     if (!stream || stream.state === StreamState.Closed) return;
-    
+
     stream.processFlags(header.flags);
     stream.updateSendWindow(header.length);
   }
 
   protected async handlePing(header: Header) {
-    this.logger(`Handling ping - flags: ${header.flags}, length: ${header.length}`);
+    this.logger(
+      `Handling ping - flags: ${header.flags}, length: ${header.length}`,
+    );
     if (header.flags & Flag.SYN) {
       // Respond to server ping
-      console.log("server ping")
+      console.log("server ping");
       const response = new Header(0, Type.Ping, Flag.ACK, 0, header.length);
       try {
         await this.sendFrame(response);
@@ -190,7 +192,7 @@ export class YamuxSession {
       }
     } else if (header.flags & Flag.ACK) {
       // Handle ping response
-      console.log("ping response")
+      console.log("ping response");
       const pingID = header.length;
       const startTime = this.pings.get(pingID);
       if (startTime) {
@@ -223,7 +225,7 @@ export class YamuxSession {
   protected startKeepAlive() {
     this.pingInterval = setInterval(async () => {
       if (this.closed) return;
-  
+
       // Clean up old pings and check for timeout
       const now = Date.now();
       let timedOutPings = 0;
@@ -233,14 +235,14 @@ export class YamuxSession {
           timedOutPings++;
         }
       }
-  
+
       // Close session if too many pings time out
       if (timedOutPings > 2) {
         this.logger("Multiple ping timeouts, closing session");
         await this.close();
         return;
       }
-  
+
       // Send new ping...
     }, this.options.keepAliveInterval);
   }
@@ -255,15 +257,15 @@ export class YamuxSession {
 
   async close(): Promise<void> {
     if (this.closed) return;
-    
+
     if (this.pingInterval) {
       clearInterval(this.pingInterval);
     }
-    
+
     // Send GoAway first
     const header = new Header(0, Type.GoAway, Flag.FIN, 0, GoAwayCode.Normal);
     await this.sendFrame(header).catch((err) => {
-      this.logger("GoAway Error", err)
+      this.logger("GoAway Error", err);
     });
 
     // Close all streams
@@ -271,17 +273,17 @@ export class YamuxSession {
       stream.close();
     }
     this.streams.clear();
-    
+
     this.closed = true;
 
     // Properly close resources
     await this.writer?.close();
     await this.reader?.cancel();
-    
+
     // Close WebSocket with proper code
     this.ws.close({
       code: 1000, // Normal closure
-      reason: "Session closed"
+      reason: "Session closed",
     });
   }
 }
